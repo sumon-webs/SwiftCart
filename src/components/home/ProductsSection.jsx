@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import ProductCard from "./ProductCard"; // Ensure this component is ready
+import ProductCard from "./ProductCard"; 
 import { getProducts } from "@/lib/api";
 import { Button, Spinner } from "@heroui/react";
 
@@ -23,7 +23,7 @@ export default function ProductSection() {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        setLoading(true);
+        setLoading(true); 
         const data = await getProducts();
         setProducts(data);
         setFilteredProducts(data);
@@ -32,10 +32,10 @@ export default function ProductSection() {
           ...new Set(data.map((p) => p.category)),
         ];
         setCategories(uniqueCategories);
+        setLoading(false); 
       } catch (err) {
-        setError("Failed to load products. Please try again later.");
-      } finally {
-        setLoading(false);
+        setError("Failed to fetch products.");
+        setLoading(false); 
       }
     };
     fetchInitialData();
