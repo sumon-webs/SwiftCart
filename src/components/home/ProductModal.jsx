@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Button, Card, Modal, Spinner } from "@heroui/react";
-import { getProductById } from "@/lib/api";
 import Image from "next/image";
 
 export function ProductModal({ product }) {
@@ -10,11 +9,12 @@ export function ProductModal({ product }) {
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleOpen = async () => {
+  const handleOpen = async (id) => {
     setIsOpen(true);
     setLoading(true);
     try {
-      const result = await getProductById(product.id);
+      const res = await fetch(`https://fakestoreapi.com/products/${id}`);
+      const result = await res.json()
       setData(result);
     } catch (error) {
       console.error("Failed to fetch:", error);
@@ -26,7 +26,7 @@ export function ProductModal({ product }) {
   return (
     <>
       {/* Trigger Button outside the Modal */}
-      <Button onPress={handleOpen} variant="solid" color="primary">
+      <Button onPress={()=>handleOpen(product.id)} variant="solid" color="primary">
         View Details
       </Button>
 

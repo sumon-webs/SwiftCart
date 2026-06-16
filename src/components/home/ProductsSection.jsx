@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import ProductCard from "./ProductCard"; 
-import { getProducts } from "@/lib/api";
 import { Button, Spinner } from "@heroui/react";
 
 export default function ProductSection() {
@@ -24,7 +23,8 @@ export default function ProductSection() {
     const fetchInitialData = async () => {
       try {
         setLoading(true); 
-        const data = await getProducts();
+         const res = await fetch(`https://fakestoreapi.com/products`);
+         const data =await res.json()
         setProducts(data);
         setFilteredProducts(data);
         const uniqueCategories = [
