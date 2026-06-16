@@ -1,10 +1,9 @@
 "use server";
 
-const api = process.env.API_URL;
 
 export const getProducts = async () => {
   try {
-    const res = await fetch(`${api}/products`);
+    const res = await fetch(`https://fakestoreapi.com/products`);
     if (!res.ok) {
       console.log("Fetch failed with status:", res.status);
     }
@@ -16,6 +15,6 @@ export const getProducts = async () => {
 };
 
 export const getProductById = async (id) => {
-  const res = await fetch(`${api}/products/${id}`);
+  const res = await fetch(`https://fakestoreapi.com/products/${id}`);
   return res.json();
 };
