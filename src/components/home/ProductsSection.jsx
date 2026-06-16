@@ -1,86 +1,143 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import ProductCard from "./ProductCard";
+import ProductCard from "./ProductCard"; // Ensure this component is ready
+import { getProducts } from "@/lib/api";
+import { Button, Spinner } from "@heroui/react";
 
 export default function ProductSection() {
   const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Selected product state hook to pass directly down to your modal assignment requirement
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  // Search & Filter States
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [categories, setCategories] = useState([]);
+
+  // Pagination States
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 8;
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchInitialData = async () => {
       try {
         setLoading(true);
-        const response = await fetch("https://fakestoreapi.com/products");
-
-        if (!response.ok) {
-          throw new Error("Something went wrong while pulling products.");
-        }
-
-        const data = await response.json();
+        const data = await getProducts();
         setProducts(data);
+        setFilteredProducts(data);
+        const uniqueCategories = [
+          "all",
+          ...new Set(data.map((p) => p.category)),
+        ];
+        setCategories(uniqueCategories);
       } catch (err) {
-        setError(err.message);
+        setError("Failed to load products. Please try again later.");
       } finally {
         setLoading(false);
       }
     };
-
-    fetchProducts();
+    fetchInitialData();
   }, []);
 
-  // 1. Loading Skeleton Grid Pattern
-  if (loading) {
+  // Filter & Search Logic with Debounce
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      let result = products;
+      if (selectedCategory !== "all") {
+        result = result.filter((p) => p.category === selectedCategory);
+      }
+      if (searchTerm.trim() !== "") {
+        result = result.filter((p) =>
+          p.title.toLowerCase().includes(searchTerm.toLowerCase()),
+        );
+      }
+      setFilteredProducts(result);
+      setCurrentPage(1); // Reset to page 1 on new filter
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm, selectedCategory, products]);
+
+  // Pagination Calculation
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = filteredProducts.slice(
+    indexOfFirstProduct,
+    indexOfLastProduct,
+  );
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+
+  if (loading)
     return (
-      <section className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {[...Array(8)].map((_, index) => (
-            <div
-              key={index}
-              className="w-full h-[380px] bg-gray-100 dark:bg-zinc-800 rounded-xl animate-pulse"
-            />
-          ))}
-        </div>
-      </section>
-    );
-  }
-
-  // 2. Fallback Error UI State
-  if (error) {
-    return (
-      <section className="py-20 text-center">
-        <div className="inline-flex p-4 rounded-full bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 mb-4">
-          ⚠️
-        </div>
-        <h3 className="text-lg font-bold text-gray-900 dark:text-zinc-100">
-          Failed to load catalogue
-        </h3>
-        <p className="text-sm text-gray-500 mt-1">{error}</p>
-      </section>
-    );
-  }
-
-  // 3. Complete Loaded Feed Layout
-  return (
-    <section className="py-12 bg-gray-50/30 dark:bg-zinc-950/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Responsive Grid Matrix */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onOpenModal={(prod) => setSelectedProduct(prod)}
-            />
-          ))}
-        </div>
-
-        {/* Placeholder hook check: Render your Product Details Modal right here if selectedProduct isn't null */}
+      <div className="flex justify-center py-20">
+        <Spinner size="lg" />
       </div>
+    );
+  if (error)
+    return <div className="text-center py-20 text-red-500">{error}</div>;
+
+  return (
+    <section className="py-12 px-4 max-w-7xl mx-auto">
+      {/* Controls */}
+      <div className="flex flex-col md:flex-row gap-4 mb-10">
+        <input
+          type="text"
+          placeholder="Search products..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full md:w-96 px-4 py-3 rounded-xl border"
+        />
+        <select
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          className="px-4 py-3 rounded-xl border capitalize"
+        >
+          {categories.map((cat) => (
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {filteredProducts.length === 0 ? (
+        <div className="text-center py-20 text-gray-500">
+          No products found matching your criteria.
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {currentProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-4 mt-10">
+              <Button
+                isDisabled={currentPage === 1} // প্রথম পেজে থাকলে প্রিভিয়াস বাটন ডিজেবল
+                onClick={() => setCurrentPage((prev) => prev - 1)}
+              >
+                Previous
+              </Button>
+
+              <span className="font-medium">
+                Page {currentPage} of {totalPages}
+              </span>
+
+              <Button
+                isDisabled={currentPage === totalPages} // শেষ পেজে থাকলে নেক্সট বাটন ডিজেবল
+                onClick={() => setCurrentPage((prev) => prev + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          )}
+        </>
+      )}
     </section>
   );
 }

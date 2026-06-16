@@ -1,8 +1,12 @@
 import { Card } from "@heroui/react";
 import Image from "next/image";
+import { ProductModal } from "./ProductModal";
 
 export default function ProductCard({ product, onOpenModal }) {
-  const { title, price, image, category, rating } = product;
+  const {  title, price, image, category, rating } = product;
+  const handleModal = async (id) => {
+    console.log(id);
+  };
 
   return (
     <Card
@@ -46,9 +50,8 @@ export default function ProductCard({ product, onOpenModal }) {
           <span className="text-lg font-black text-blue-600 dark:text-blue-400">
             ${price.toFixed(2)}
           </span>
-          <button className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-200">
-            View Details
-          </button>
+
+          <ProductModal  product={product}/>
         </div>
       </Card.Content>
     </Card>
